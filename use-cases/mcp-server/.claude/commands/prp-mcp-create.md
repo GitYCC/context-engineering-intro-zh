@@ -11,9 +11,9 @@ Example usage: /prp-mcp-create file-manager "鏡像 task master mcp 的 MCP 服�
 
 創建一個全面的產品需求提示（Product Requirement Prompt, PRP），用於構建具有身份驗證、數據庫集成和 Cloudflare Workers 部署的模型上下文協議（Model Context Protocol, MCP）服務器。
 
-在開始之前，請確保您閱讀這些關鍵文件以了解 PRP 的目標：
-PRPs/README.md
-PRPs/templates/prp_mcp_base.md（此基礎 PRP 已根據項目結構部分填寫，但請根據用戶的 MCP 服務器用例完成它）
+在開始之前，請確保您閱讀這些關鍵文件以了解 PRP 的目標：  
+PRPs/README.md  
+PRPs/templates/prp_mcp_base.md（此基礎 PRP 已根據項目結構部分填寫，但請根據用戶的 MCP 服務器用例完成它） 
 
 ## 用戶的 MCP 用例：$ARGUMENTS
 
