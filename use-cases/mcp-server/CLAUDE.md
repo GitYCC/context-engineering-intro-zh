@@ -1,5 +1,60 @@
 # MCP Server 搭配 GitHub OAuth - 實作指南
 
+## MCP Server 技術架構圖
+
+下圖展示了 MCP Server 的完整技術堆疊，包含運行環境、程式語言、MCP 框架和資料層的詳細組成：
+
+```mermaid
+flowchart TD
+    A["技術堆疊"]
+    A --> B["運行環境<br/>Cloudflare Workers"]
+    A --> C["程式語言<br/>TypeScript + Node.js"]
+    A --> D["MCP 框架"]
+    A --> E["資料層"]
+    
+    B --> B1["V8 Isolates"]
+    B --> B2["Durable Objects"]
+    B --> B3["KV Storage"]
+    B --> B4["Workers AI"]
+    
+    C --> C1["TypeScript 嚴格模式"]
+    C --> C2["Zod 輸入驗證"]
+    C --> C3["npm 套件管理"]
+    
+    D --> D1["@modelcontextprotocol/sdk"]
+    D --> D2["agents/mcp"]
+    D --> D3["workers-mcp"]
+    
+    E --> E1["PostgreSQL"]
+    E --> E2["連接池管理"]
+    E --> E3["SQL 注入防護"]
+```
+
+---
+
+## 開發工作流程圖
+
+此流程圖說明了從本地開發到生產部署的完整開發工作流程，包含測試、配置和監控各個環節：
+
+```mermaid
+flowchart LR
+    A["開發階段"] --> B["本地開發<br/>wrangler dev"]
+    B --> C["型別檢查<br/>npm run type-check"]
+    C --> D["測試驗證<br/>MCP Inspector"]
+    D --> E["部署階段"]
+    
+    E --> F["環境配置<br/>.dev.vars"]
+    F --> G["生產部署<br/>wrangler deploy"]
+    G --> H["監控整合<br/>Sentry"]
+    
+    I["工具管理"] --> I1["註冊新工具"]
+    I1 --> I2["Zod Schema"]
+    I1 --> I3["權限檢查"]
+    I1 --> I4["錯誤處理"]
+    
+    I --> J["register-tools.ts"]
+```
+
 本指南提供使用 Node.js、TypeScript 和 Cloudflare Workers 建構具有 GitHub OAuth 身份驗證的 MCP (Model Context Protocol) 伺服器的實作模式和標準。關於「要建構什麼」的資訊，請參閱 PRP (Product Requirement Prompt) 文件。
 
 ## 核心原則
@@ -748,4 +803,88 @@ catch (error) {
 2. **Zod 驗證**：所有輸入都使用 Zod 架構驗證
 3. **錯誤處理**：所有非同步操作都包裝在 try/catch 中
 4. **使用者環境**：使用 GitHub 使用者資訊進行 Props 型別化
-5. **環境**：使用 `wrangler types` 生成 Cloudflare Workers
+5. **環境**：使用 `wrangler types` 生成 Cloudflare Workers 型別
+
+## 程式碼風格偏好
+
+### TypeScript 風格
+
+- 對所有函式參數和回傳型別使用明確的型別註解
+- 對所有匯出的函式和類別使用 JSDoc 註解
+- 對所有非同步操作優先使用 async/await
+- **強制**：對所有輸入驗證使用 Zod 架構
+- **強制**：使用 try/catch 區塊進行適當的錯誤處理
+- 保持函式小而專注（單一責任原則）
+
+### 檔案組織
+
+- 每個 MCP 伺服器應該獨立包含在單一 TypeScript 檔案中
+- 組織匯入語句：Node.js 內建、第三方套件、本地匯入
+- 在 src/ 目錄中使用相對匯入
+- **為所有模組匯入 Zod 進行驗證和適當的型別**
+
+### 測試慣例
+
+- 使用 MCP Inspector 進行整合測試：`npx @modelcontextprotocol/inspector@latest`
+- 使用本地開發伺服器測試：`wrangler dev`
+- 使用描述性的工具名稱和描述
+- **測試身份驗證和權限場景**
+- **使用無效資料測試輸入驗證**
+
+## 重要注意事項
+
+### 不應該做的事
+
+- **永不**將密鑰或環境變數提交到儲存庫
+- **永不**在簡單的解決方案能夠工作時構建複雜的解決方案
+- **永不**跳過使用 Zod 架構的輸入驗證
+
+### 應該做的事
+
+- **始終**使用 TypeScript 嚴格模式和適當的型別
+- **始終**使用 Zod 架構驗證輸入
+- **始終**遵循核心原則（KISS、YAGNI 等）
+- **始終**使用 Wrangler CLI 進行所有開發和部署
+
+## Git 工作流程
+
+```bash
+# 提交之前，始終運行：
+npm run type-check              # 確保 TypeScript 編譯
+wrangler dev --dry-run          # 測試部署設定
+
+# 使用描述性訊息提交
+git add .
+git commit -m "feat: 為資料庫查詢添加新的 MCP 工具"
+```
+
+## 快速參考
+
+### 添加新的 MCP 工具
+
+1. **在你的專案中建立新的工具模組**（遵循 `examples/` 中的模式）：
+   ```typescript
+   // src/tools/your-feature-tools.ts
+   export function registerYourFeatureTools(server: McpServer, env: Env, props: Props) {
+     // 在此註冊你的工具
+   }
+   ```
+
+2. **在你的型別檔案中定義 Zod 架構**進行輸入驗證
+
+3. **使用範例中的模式實作工具處理程序**，具有適當的錯誤處理
+
+4. **在 `src/tools/register-tools.ts` 中註冊你的工具**：
+   ```typescript
+   import { registerYourFeatureTools } from "./your-feature-tools";
+   
+   export function registerAllTools(server: McpServer, env: Env, props: Props) {
+     // 現有註冊
+     registerDatabaseTools(server, env, props);
+     
+     // 添加你的新註冊
+     registerYourFeatureTools(server, env, props);
+   }
+   ```
+
+5. **如需要更新文件**

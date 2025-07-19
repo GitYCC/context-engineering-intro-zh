@@ -1,5 +1,59 @@
 # MCP Server Builder - Context Engineering 用例
 
+## MCP Server 整體架構圖
+
+以下架構圖展示了基於 Cloudflare Workers 的 MCP Server 完整技術堆疊，包含身份驗證、MCP 核心、工具系統和外部整合：
+
+```mermaid
+flowchart TD
+    A["MCP Server<br/>Cloudflare Workers"]
+    A --> B["身份驗證層"]
+    A --> C["MCP 核心"]
+    A --> D["工具系統"]
+    
+    B --> B1["GitHub OAuth 2.0"]
+    B --> B2["HMAC 簽名 Cookie"]
+    B --> B3["角色權限控制"]
+    
+    C --> C1["McpAgent<br/>Durable Objects"]
+    C --> C2["McpServer SDK"]
+    C --> C3["雙協議支持<br/>HTTP + SSE"]
+    
+    D --> D1["資料庫工具"]
+    D --> D2["模組化註冊"]
+    D --> D3["Zod 驗證"]
+    
+    E["外部整合"] --> E1["PostgreSQL"]
+    E --> E2["GitHub API"]
+    E --> E3["Sentry 監控"]
+    
+    D1 --> E1
+    B1 --> E2
+    C --> E3
+```
+
+---
+
+## MCP Server PRP 工作流程圖
+
+此流程圖說明了使用 Context Engineering 建立 MCP Server 的完整流程，從定義需求到部署生產：
+
+```mermaid
+flowchart LR
+    A["1.定義需求<br/>PRPs/INITIAL.md"] --> B["2.生成 MCP PRP<br/>/prp-mcp-create"]
+    B --> C["3.審查與調整<br/>PRPs/your-server.md"]
+    C --> D["4.執行 PRP<br/>/prp-mcp-execute"]
+    D --> E["5.本地測試<br/>wrangler dev"]
+    E --> F["6.部署生產<br/>wrangler deploy"]
+    
+    G["MCP 模板與模式"] --> B
+    H["現有程式碼範例"] --> B
+    I["驗證循環"] --> D
+    
+    E --> E1["MCP Inspector<br/>測試"]
+    E --> E2["Claude Desktop<br/>整合"]
+```
+
 此用例演示如何使用**Context Engineering**和**PRP (Product Requirements Prompt) 流程**來構建生產就緒的 Model Context Protocol (MCP) 伺服器。它提供了一個經過驗證的模板和工作流程，用於創建具有 GitHub OAuth 身份驗證、資料庫集成和 Cloudflare Workers 部署的 MCP 伺服器。
 
 > PRP 是 PRD + 精選代碼庫智能 + agent/runbook — 這是 AI 在首次嘗試時就能合理交付生產就緒代碼所需的最小可行包。
